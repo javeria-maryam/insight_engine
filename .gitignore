@@ -1,0 +1,9 @@
+# Environments
+venv/
+.env
+
+# Cache
+__pycache__/
+
+# Do not upload user PDFs to the public repo
+*.pdf
