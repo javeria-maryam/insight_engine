@@ -3,80 +3,101 @@ import tempfile
 import streamlit as st
 from langchain_core.messages import HumanMessage, AIMessage
 from rag_engine import process_pdf, query_rag
+from sql_engine import get_sql_answer
 
 # --- Page Configuration ---
 st.set_page_config(page_title="InsightEngine Data Suite", page_icon="🛠️", layout="wide")
 
-# --- Sidebar ---
-with st.sidebar:
-    st.title("🛠️ InsightEngine Operations")
-    st.write("Logged in as active manager.")
-    if st.button("Log Out"):
-        st.session_state.clear()
-        st.rerun()
+# --- Day 1: Authentication System ---
+# --- Day 1: Authentication System (Upgraded) ---
+def check_password():
+    """Returns True if the user enters the correct username and password."""
+    def login_callback():
+        # Verifying both credentials
+        if (st.session_state["username_input"] == "admin" and 
+            st.session_state["password_input"] == "admin123"):
+            st.session_state["password_correct"] = True
+            # Flush credentials from active session state memory for security
+            del st.session_state["username_input"]
+            del st.session_state["password_input"]
+        else:
+            st.session_state["password_correct"] = False
 
-# --- Main Interface ---
-st.markdown("### Upload internal company documents and process semantic vector queries instantly.")
+    if "password_correct" not in st.session_state:
+        st.title("🔒 Security Portal")
+        st.text_input("Username", key="username_input")
+        st.text_input("Password", type="password", key="password_input")
+        st.button("Login", on_click=login_callback)
+        return False
+    elif not st.session_state["password_correct"]:
+        st.title("🔒 Security Portal")
+        st.text_input("Username", key="username_input")
+        st.text_input("Password", type="password", key="password_input")
+        st.button("Login", on_click=login_callback)
+        st.error("❌ Incorrect credentials. Please try again.")
+        return False
+    return True
 
-# 1. File Uploader
-uploaded_file = st.file_uploader("Drop corporate PDFs here", type=["pdf"])
-
-if uploaded_file is not None:
-    # Check if this is a newly uploaded file so we don't re-process unnecessarily
-    if "last_uploaded_file" not in st.session_state or st.session_state.last_uploaded_file != uploaded_file.name:
-        
-        # Save the uploaded file to a temporary location so PyPDFLoader can read it
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
-            tmp_file.write(uploaded_file.getvalue())
-            temp_path = tmp_file.name
-            
-        with st.spinner("Processing document embeddings locally..."):
-            # Process the PDF and store the vector index in session state
-            st.session_state.vector_store = process_pdf(temp_path)
-            
-            # Mark this file as processed and clear any old chat history
-            st.session_state.last_uploaded_file = uploaded_file.name
-            st.session_state.chat_history = []
-            
-        # Clean up the temporary file from the hard drive
-        os.remove(temp_path)
-
-# 2. Chat Interface
-if "vector_store" in st.session_state and st.session_state.vector_store is not None:
-    st.success("Document analyzed and fully searchable!")
+# --- Main Application Gate ---
+if check_password():
+    st.title("🛠️ InsightEngine Data Suite")
     
-    # Initialize chat history array if it doesn't exist
-    if "chat_history" not in st.session_state:
-        st.session_state.chat_history = []
+    # Create the navigation tabs
+    tab1, tab2 = st.tabs(["📄 Document Auditor", "📊 SQL Analytics"])
 
-    st.markdown("### Ask something about your uploaded documents:")
+    # --- TAB 1: Document Auditor ---
+    with tab1:
+        st.markdown("### Upload internal company documents.")
+        uploaded_file = st.file_uploader("Drop corporate PDFs here", type=["pdf"])
+        
+        if uploaded_file:
+            if "last_uploaded_file" not in st.session_state or st.session_state.last_uploaded_file != uploaded_file.name:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                    tmp.write(uploaded_file.getvalue())
+                    path = tmp.name
+                st.session_state.vector_store = process_pdf(path)
+                st.session_state.last_uploaded_file = uploaded_file.name
+                st.session_state.chat_history = []
+                os.remove(path)
 
-    # Render the historical chat messages on the screen
-    for message in st.session_state.chat_history:
-        if isinstance(message, HumanMessage):
+        if "vector_store" in st.session_state:
+            st.success("Document analyzed!")
+            
+            # Render chat history
+            if "chat_history" in st.session_state:
+                for message in st.session_state.chat_history:
+                    if isinstance(message, HumanMessage):
+                        with st.chat_message("user"): st.write(message.content)
+                    elif isinstance(message, AIMessage):
+                        with st.chat_message("assistant"): st.write(message.content)
+            
+            if user_query := st.chat_input("Ask about the documents..."):
+                with st.chat_message("user"): st.write(user_query)
+                with st.chat_message("assistant"):
+                    answer = query_rag(st.session_state.vector_store, user_query, st.session_state.chat_history)
+                    st.write(answer)
+                st.session_state.chat_history.append(HumanMessage(content=user_query))
+                st.session_state.chat_history.append(AIMessage(content=answer))
+
+    # --- TAB 2: SQL Analytics ---
+    # --- TAB 2: SQL Analytics ---
+    with tab2:
+        st.markdown("### Query your SQL Database")
+        st.write("Try asking: *'What was the total revenue for Cloud Storage?'* or *'Which product generated the most revenue?'*")
+        
+        if sql_query := st.chat_input("Ask a question about the database...", key="sql_input"):
             with st.chat_message("user"):
-                st.write(message.content)
-        elif isinstance(message, AIMessage):
+                st.write(sql_query)
+                
+            with st.spinner("Translating to SQL and analyzing data..."):
+                # Unpack the three return values
+                query, raw_result, insight = get_sql_answer(sql_query)
+                
             with st.chat_message("assistant"):
-                st.write(message.content)
-
-    # Chat Input Trigger
-    if user_query := st.chat_input("Type your question here..."):
-        
-        # Immediately display the user's new question
-        with st.chat_message("user"):
-            st.write(user_query)
-        
-        # Run the RAG pipeline and display the assistant's answer
-        with st.chat_message("assistant"):
-            with st.spinner("Analyzing document context..."):
-                answer = query_rag(
-                    st.session_state.vector_store, 
-                    user_query, 
-                    st.session_state.chat_history
-                )
-                st.write(answer)
-        
-        # Append the new interaction to the session state memory
-        st.session_state.chat_history.append(HumanMessage(content=user_query))
-        st.session_state.chat_history.append(AIMessage(content=answer))
+                # Display the clean, synthesized AI response
+                st.markdown(f"**Insight:** {insight}")
+                
+                # Tuck the raw data and SQL inside a collapsible expander
+                with st.expander("🔍 View Technical Details"):
+                    st.code(query, language="sql")
+                    st.write(f"**Raw Array:** `{raw_result}`")
