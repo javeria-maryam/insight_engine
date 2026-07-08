@@ -1,3 +1,5 @@
+import ast
+import pandas as pd
 import os
 import tempfile
 import streamlit as st
@@ -80,24 +82,47 @@ if check_password():
                 st.session_state.chat_history.append(AIMessage(content=answer))
 
     # --- TAB 2: SQL Analytics ---
-    # --- TAB 2: SQL Analytics ---
     with tab2:
         st.markdown("### Query your SQL Database")
-        st.write("Try asking: *'What was the total revenue for Cloud Storage?'* or *'Which product generated the most revenue?'*")
+        st.write("Try asking: *'What is the revenue for each product?'* or *'Which product generated the most revenue?'*")
         
         if sql_query := st.chat_input("Ask a question about the database...", key="sql_input"):
             with st.chat_message("user"):
                 st.write(sql_query)
                 
             with st.spinner("Translating to SQL and analyzing data..."):
-                # Unpack the three return values
                 query, raw_result, insight = get_sql_answer(sql_query)
                 
             with st.chat_message("assistant"):
-                # Display the clean, synthesized AI response
                 st.markdown(f"**Insight:** {insight}")
                 
-                # Tuck the raw data and SQL inside a collapsible expander
+                # --- Single, Clean Charting + Download Block ---
+                try:
+                    data = ast.literal_eval(raw_result)
+                    
+                    if isinstance(data, list) and len(data) > 0:
+                        df = pd.DataFrame(data)
+                        
+                        # Render the chart or table
+                        if len(df.columns) == 2:
+                            df.columns = ["Category", "Value"]
+                            st.bar_chart(df.set_index("Category"))
+                        else:
+                            st.dataframe(df, use_container_width=True)
+                            
+                        # Render the download button right beneath the data
+                        csv = df.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="📥 Download Data as CSV",
+                            data=csv,
+                            file_name='insight_export.csv',
+                            mime='text/csv',
+                        )
+                except Exception:
+                    pass
+                # -----------------------------------------------
+
+                # Technical details sit clean at the very bottom
                 with st.expander("🔍 View Technical Details"):
                     st.code(query, language="sql")
                     st.write(f"**Raw Array:** `{raw_result}`")
