@@ -1,60 +1,69 @@
-# 🛠️ InsightEngine Data Suite
+# 🚀 InsightEngine Data Suite
 
-An enterprise-grade, hybrid Retrieval-Augmented Generation (RAG) dashboard designed for secure, high-speed corporate document auditing. InsightEngine allows users to upload dense PDFs and query them instantly using natural language, complete with conversational memory for complex follow-up questions.
+An enterprise-grade, end-to-end data intelligence platform that combines **Retrieval-Augmented Generation (RAG)** for unstructured document analysis with a **Conversational Text-to-SQL Engine** for structured database analytics. 
 
-## 🚀 Current Architecture (Day 2 Build)
+Designed with a focus on security, cost-efficiency, and user experience, InsightEngine allows non-technical users to query complex datasets using natural language and instantly receive synthesized text, dynamic visualizations, and exportable reports.
 
-This project utilizes a hybrid local/cloud architecture to guarantee maximum data privacy and absolute immunity to API rate limits during the embedding phase.
+## ✨ Key Features
 
-### Core Features
-* **Secure Document Ingestion:** Processes complex corporate PDFs using `PyPDFLoader` and intelligent recursive character chunking to maintain semantic context.
-* **Zero-Cost Local Embeddings:** Utilizes HuggingFace's `all-MiniLM-L6-v2` running locally on the CPU. This ensures high-volume document vectorization without hitting cloud API rate limits or incurring token costs.
-* **High-Speed Vector Retrieval:** Implements a localized FAISS (Facebook AI Similarity Search) index in-memory for millisecond-latency semantic searching.
-* **Conversational Memory Engine:** Features a dual-prompt LangChain pipeline that contextualizes follow-up questions against the chat history before querying the vector store, allowing for natural, continuous conversations.
-* **Anti-Hallucination Guardrails:** Strictly constrained system prompts force the LLM to rely *only* on the retrieved context, admitting ignorance rather than fabricating corporate policy.
-* **State-of-the-Art Text Generation:** Powered by Google's `gemini-2.5-flash` for rapid, highly accurate synthesis of the final answer.
+* **🔒 Secure Authentication Portal:** A protected access layer ensuring only authorized users can query sensitive business data and documents.
+* **📄 Zero-Cost Local RAG Pipeline:** Processes and queries unstructured PDF documents using locally embedded vector processing, entirely bypassing expensive API rate limits and token costs.
+* **🗄️ Conversational Text-to-SQL Engine:** Translates plain English questions into complex SQL queries, executes them against the database, and synthesizes the raw arrays into executive-friendly summaries.
+* **📊 Dynamic Data Visualization:** Automatically analyzes SQL query results and renders native, interactive charts (bar charts, dataframes) based on the structural shape of the returned data.
+* **📥 One-Click Data Export:** Seamlessly converts analytical results into downloadable CSV reports for external use in Excel or downstream business intelligence tools.
 
-## 💻 Tech Stack
+## 🛠️ Architecture & Tech Stack
 
-* **Frontend:** Streamlit
-* **Orchestration:** LangChain
-* **Embeddings:** HuggingFace (`sentence-transformers`)
-* **Vector Database:** FAISS
-* **LLM Engine:** Google Gemini API (`gemini-2.5-flash`)
+InsightEngine is built using a modern, scalable AI engineering stack:
 
-## ⚙️ Local Installation & Setup
+* **Frontend:** Streamlit (Python-based UI for rapid dashboard prototyping)
+* **Orchestration:** LangChain (Managing LLM chains, prompts, and database agents)
+* **Data Processing:** Pandas & AST (Dynamic string-to-dataframe conversion for visualization)
+* **Database:** SQLite (Local structured data storage)
+* **AI/LLM Integration:** Hybrid approach utilizing local embeddings for cost-free document processing and secure LLM API integration for advanced SQL generation.
+
+## 🚀 Installation & Setup
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/YOUR_GITHUB_USERNAME/insight_engine.git](https://github.com/YOUR_GITHUB_USERNAME/insight_engine.git)
+   git clone [https://github.com/YOUR_USERNAME/insight_engine.git](https://github.com/YOUR_USERNAME/insight_engine.git)
    cd insight_engine
-
-Create and activate a virtual environment:
+Create a virtual environment:
 
 Bash
 python -m venv venv
-# Windows
-venv\Scripts\activate
-# Mac/Linux
-source venv/bin/activate
-
-Install the required dependencies:
+source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+Install dependencies:
 
 Bash
-pip install streamlit langchain-google-genai langchain-community langchain-classic langchain-huggingface sentence-transformers faiss-cpu pypdf python-dotenv
-
-
-Environment Variables:
-Create a .env file in the root directory and add your Google API Key:
-
-Plaintext
-GOOGLE_API_KEY=your_api_key_here
-
-
-Run the Application:
+pip install -r requirements.txt
+Run the application:
 
 Bash
-python -m streamlit run app.py
+streamlit run app.py
+🧠 The Engineering Philosophy
+This project was built to demonstrate that applied AI engineering is about Systems Orchestration, not just model training. By wiring together an LLM, a vector database, a SQL execution engine, and a frontend framework with custom error-handling parsers, InsightEngine bridges the gap between raw data and actionable business intelligence.
 
-Note: This repository is currently in active development. Upcoming modules include a Text-to-SQL analytics engine for querying structured database records.
+Special attention was given to edge-case handling, such as building custom parsers to strip rogue markdown formatting from LLM SQL outputs before database execution.
 
+🔮 Future Roadmap (v2.0)
+Cloud Deployment: Migration from localhost to a live cloud environment (AWS/Render).
+
+Production Database Integration: Transitioning the storage layer from local SQLite to PostgreSQL.
+
+Hybrid Search: Implementing advanced retrieval combining vector embeddings with BM25 keyword search for maximum document accuracy.
+
+Developed as a portfolio piece showcasing applied AI architecture and data engineering.
+
+
+***
+
+### How to push this to your repository:
+
+1. Create a file named `README.md` in your project folder.
+2. Paste the code above into it. (Make sure to swap out `YOUR_USERNAME` in the clone link with your actual GitHub username!)
+3. Run your standard push commands:
+   ```bash
+   git add README.md
+   git commit -m "docs: add master README for project portfolio presentation"
+   git push
